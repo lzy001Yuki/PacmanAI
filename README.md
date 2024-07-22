@@ -79,4 +79,4 @@ conda config --add channels https://mirrors.tuna.tsinghua.edu.cn/anaconda/pkgs/f
 
 ### Tracking
 
-相关文件和介绍在 [tracking](https://github.com/ACMClassCourse-2023/PPCA-AIPacMan-2024/tree/main/tracking) 文件夹下。
+相关文件和介绍在 [tracking](https://github.com/ACMClassCourse-2023/PPCA-AIPacMan-2024/tree/main/tracking) 文件夹下。# PacmanAI
