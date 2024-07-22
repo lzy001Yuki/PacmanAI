@@ -25,7 +25,7 @@ class DeepQNetwork(Module):
         # and self.batch_size!
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.learning_rate = 0.005
+        self.learning_rate = 0.01
         self.numTrainingGames = 5000
         self.batch_size = 128
 

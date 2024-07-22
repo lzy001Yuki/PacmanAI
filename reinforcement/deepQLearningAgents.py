@@ -57,9 +57,9 @@ class PacmanDeepQAgent(PacmanQAgent):
         import model
         self.model = model.DeepQNetwork(state_dim, action_dim)
         self.target_model = model.DeepQNetwork(state_dim, action_dim)
-        if os.path.exists('para.bin'):
+        if os.path.exists('para.best.bin'):
             print('has initialized--------------------')
-            checkpoint = torch.load('para.bin')
+            checkpoint = torch.load('para.best.bin')
             self.model.load_state_dict(checkpoint['model_state_dict'])
             self.target_model.load_state_dict(checkpoint['target_model_state_dict'])
             self.model.optimizer.load_state_dict(checkpoint['model_optimizer_state_dict'])
@@ -117,7 +117,7 @@ class PacmanDeepQAgent(PacmanQAgent):
         next_states = torch.tensor(next_states)
         done = np.array([x.done for x in minibatch])
 
-        Q_predict = network.run(states).data.detach().cpu().numpy()
+        Q_predict = network.run(states).data.detach().numpy()
         Q_target = np.copy(Q_predict )
         state_indices = states.int().detach().numpy()
         state_indices = (state_indices[:, 0], state_indices[:, 1])
