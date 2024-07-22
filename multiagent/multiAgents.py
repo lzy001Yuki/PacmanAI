@@ -11,7 +11,6 @@
 # Student side autograding was added by Brad Miller, Nick Hay, and
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
-
 from util import manhattanDistance
 from game import Directions
 import random, util
@@ -48,8 +47,15 @@ class ReflexAgent(Agent):
         bestIndices = [index for index in range(len(scores)) if scores[index] == bestScore]
         chosenIndex = random.choice(bestIndices) # Pick randomly among the best
 
-        "Add more of your code here if you want to"
 
+        if len(bestIndices) > 1 and  legalMoves[chosenIndex] == "Stop":
+            k = chosenIndex
+            for i in bestIndices :
+                if i != k :
+                    chosenIndex = i
+
+        "Add more of your code here if you want to"
+        #print(scores, bestIndices, legalMoves[chosenIndex], chosenIndex)
         return legalMoves[chosenIndex]
 
     def evaluationFunction(self, currentGameState: GameState, action):
@@ -74,8 +80,57 @@ class ReflexAgent(Agent):
         newGhostStates = successorGameState.getGhostStates()
         newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
 
-        "*** YOUR CODE HERE ***"
-        return successorGameState.getScore()
+        # take food and the position of ghosts into consideration with different weight
+        # nearer ghosts --bad;
+
+
+        minGhostDist = -1
+        ngCost = 0
+        for ghostState in newGhostStates:
+            dist = manhattanDistance(newPos, ghostState.getPosition())
+            if dist < minGhostDist or minGhostDist == -1:
+                minGhostDist = dist
+        if minGhostDist == 1:
+            ngCost += -3000
+        elif minGhostDist == 0:
+            ngCost += -6000
+        elif minGhostDist >= 18:
+            ngCost += 100
+        else:
+            ngCost = 0
+
+        # more food --good;
+        foodNum = len(newFood.asList())
+        fnCost = -foodNum * 30
+        # more foodCost --bad;
+        minFoodDist = -1
+        fcCost = 0
+        for food in newFood.asList():
+            foodDist = manhattanDistance(newPos, food)
+            if foodDist < minFoodDist or minFoodDist == -1:
+                minFoodDist = foodDist
+        if minFoodDist == -1 :
+            fcCost = 0
+        else :
+            fcCost = -minFoodDist
+        # newScaredTimes --good
+        scaredTimes = 0
+        scared = False
+        for ghostState in newGhostStates:
+            if ghostState.scaredTimer > 35:
+                scaredTimes += 10
+                scared = True
+            elif ghostState.scaredTimer >= 30 and ghostState.scaredTimer <= 35:
+                scaredTimes += 5
+                scared = True
+            elif ghostState.scaredTimer > 0 and ghostState.scaredTimer <= 30:
+                scaredTimes += 1
+                scared = True
+        stCost = 10 * scaredTimes
+        if scared and minGhostDist <= 1: ngCost += 1000
+        #print(stCost, fcCost, fnCost, ngCost,minFoodDist)
+
+        return stCost + fcCost + fnCost + ngCost
 
 def scoreEvaluationFunction(currentGameState: GameState):
     """
@@ -135,8 +190,42 @@ class MinimaxAgent(MultiAgentSearchAgent):
         gameState.isLose():
         Returns whether or not the game state is a losing state
         """
-        "*** YOUR CODE HERE ***"
+
+        # decide which action is best for Pacman
+        # Pacman --maxValue Ghosts --minValue
+        # every move of Pacman follows all ghosts' movement
+        PacIndex = 0
+        maxValue = float("-inf")
+        for action in gameState.getLegalActions(PacIndex):
+            nextState = gameState.generateSuccessor(PacIndex, action)
+            nextValue = self.evaluate(nextState, 0, 1)
+            if nextValue >= maxValue:
+                maxValue = nextValue
+                objAction = action
+        return objAction
         util.raiseNotDefined()
+
+    def evaluate(self, gameState: GameState, depth, index):
+        if depth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        if index == 0:
+            maxValue = float("-inf")
+            # maxValue of Pacman and ghosts in the same depth
+            for action in gameState.getLegalActions(index):
+                maxValue = max(maxValue, self.evaluate(gameState.generateSuccessor(index, action), depth, index + 1))
+            return maxValue
+        else:
+            minValue = float("inf")
+            # if the last ghost, consider the next level
+            for action in gameState.getLegalActions(index) :
+                if index == gameState.getNumAgents() - 1:
+                    minValue = min(minValue, self.evaluate(gameState.generateSuccessor(index, action), depth + 1, 0))
+                else:
+                    minValue = min(minValue, self.evaluate(gameState.generateSuccessor(index, action), depth, index + 1))
+            return minValue
+
+
+
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
     """
@@ -147,8 +236,46 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         """
         Returns the minimax action using self.depth and self.evaluationFunction
         """
-        "*** YOUR CODE HERE ***"
+        PacIndex = 0
+        maxValue = float("-inf")
+        alpha = float("-inf") # 当前最大化玩家已知最优值
+        beta = float("inf") # 当前最小化玩家已知最优值
+        objAction = Directions.STOP
+        for action in gameState.getLegalActions(PacIndex):
+            nextState = gameState.generateSuccessor(PacIndex, action)
+            nextValue = self.evaluate(nextState, 0, 1, alpha, beta)
+            if nextValue > maxValue:
+                maxValue = nextValue
+                objAction = action
+            alpha = max(alpha, maxValue)
+        return objAction
         util.raiseNotDefined()
+
+    def evaluate(self, gameState, depth, index, alpha, beta):
+        if depth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        if index == 0:
+            maxValue = float("-inf")
+            # maxValue of Pacman and ghosts in the same depth
+            for action in gameState.getLegalActions(index):
+                maxValue = max(maxValue, self.evaluate(gameState.generateSuccessor(index, action), depth, index + 1, alpha, beta))
+                if maxValue > beta:
+                    return maxValue
+                alpha = max(alpha, maxValue)
+            return maxValue
+        else :
+            minValue = float("inf")
+            # if the last ghost, consider the next level
+            for action in gameState.getLegalActions(index):
+                if index == gameState.getNumAgents() - 1:
+                    minValue = min(minValue, self.evaluate(gameState.generateSuccessor(index, action), depth + 1, 0, alpha, beta))
+                else:
+                    minValue = min(minValue,
+                                   self.evaluate(gameState.generateSuccessor(index, action), depth, index + 1, alpha, beta))
+                if minValue < alpha:
+                    return minValue
+                beta = min(minValue, beta)
+            return minValue
 
 class ExpectimaxAgent(MultiAgentSearchAgent):
     """
@@ -162,8 +289,38 @@ class ExpectimaxAgent(MultiAgentSearchAgent):
         All ghosts should be modeled as choosing uniformly at random from their
         legal moves.
         """
-        "*** YOUR CODE HERE ***"
+        PacIndex = 0
+        maxValue = float("-inf")
+        for action in gameState.getLegalActions(PacIndex):
+            nextState = gameState.generateSuccessor(PacIndex, action)
+            nextValue = self.evaluate(nextState, 0, 1)
+            if nextValue >= maxValue:
+                maxValue = nextValue
+                objAction = action
+        return objAction
         util.raiseNotDefined()
+
+
+    def evaluate(self, gameState: GameState, depth, index):
+        if depth == self.depth or gameState.isWin() or gameState.isLose():
+            return self.evaluationFunction(gameState)
+        if index == 0:
+            maxValue = float("-inf")
+            # maxValue of Pacman and ghosts in the same depth
+            for action in gameState.getLegalActions(index):
+                maxValue = max(maxValue, self.evaluate(gameState.generateSuccessor(index, action), depth, index + 1))
+            return maxValue
+        else:
+            average = 0.0
+            stateNum = len(gameState.getLegalActions(index))
+            # if the last ghost, consider the next level
+            for action in gameState.getLegalActions(index) :
+                if index == gameState.getNumAgents() - 1:
+                    average += self.evaluate(gameState.generateSuccessor(index, action), depth + 1, 0) / stateNum
+                else:
+                    average += self.evaluate(gameState.generateSuccessor(index, action), depth, index + 1) / stateNum
+            return average
+
 
 def betterEvaluationFunction(currentGameState: GameState):
     """
@@ -172,7 +329,63 @@ def betterEvaluationFunction(currentGameState: GameState):
 
     DESCRIPTION: <write something here so we know what you did>
     """
-    "*** YOUR CODE HERE ***"
+    # Useful information you can extract from a GameState (pacman.py)
+    newPos = currentGameState.getPacmanPosition()
+    newFood = currentGameState.getFood()
+    newGhostStates = currentGameState.getGhostStates()
+    newScaredTimes = [ghostState.scaredTimer for ghostState in newGhostStates]
+    Capsules = currentGameState.getCapsules()
+    # take food and the position of ghosts into consideration with different weight
+    # nearer ghosts --bad
+
+    minGhostDist = -1
+    ngCost = 0
+    for ghostState in newGhostStates:
+        dist = manhattanDistance(newPos, ghostState.getPosition())
+        if dist < minGhostDist or minGhostDist == -1:
+            minGhostDist = dist
+    if minGhostDist == 1:
+        ngCost += -3000
+    elif minGhostDist == 0:
+        ngCost += -6000
+    elif minGhostDist >= 18:
+        ngCost += 100
+    else: ngCost = 0
+
+    # more food --good;
+    foodNum = len(newFood.asList())
+    fnCost = -foodNum * 50
+    # more foodCost --bad;
+    minFoodDist = -1
+    for food in newFood.asList():
+        foodDist = manhattanDistance(newPos, food)
+        if foodDist < minFoodDist or minFoodDist == -1:
+            minFoodDist = foodDist
+    if minFoodDist == -1:
+        fcCost = 0
+    else:
+        fcCost = -minFoodDist
+    # newScaredTimes --good
+    scaredTimes = 0
+    scared = False
+    for ghostState in newGhostStates:
+        if ghostState.scaredTimer > 35:
+            scaredTimes += 10
+            scared = True
+        elif ghostState.scaredTimer >= 30 and ghostState.scaredTimer <= 35:
+            scaredTimes += 5
+            scared = True
+        elif ghostState.scaredTimer > 0 and ghostState.scaredTimer <= 30:
+            scaredTimes += 1
+            scared = True
+    stCost = 10 * scaredTimes
+    if scared and minGhostDist <= 1: ngCost += 1000
+    # print(stCost, fcCost, fnCost, ngCost,minFoodDist)
+    #print(stCost, fcCost, fnCost, ngCost, cdCost, wallCost)
+
+
+    return stCost + fcCost + fnCost + ngCost + currentGameState.getScore()
+
     util.raiseNotDefined()
 
 # Abbreviation

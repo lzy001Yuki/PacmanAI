@@ -37,9 +37,9 @@ def joinFactorsByVariableWithCallTracking(callTrackingList=None):
         if not (callTrackingList is None):
             callTrackingList.append(('join', joinVariable))
 
+
         currentFactorsToJoin =    [factor for factor in factors if joinVariable in factor.variablesSet()]
         currentFactorsNotToJoin = [factor for factor in factors if joinVariable not in factor.variablesSet()]
-
         # typecheck portion
         numVariableOnLeft = len([factor for factor in currentFactorsToJoin if joinVariable in factor.unconditionedVariables()])
         if numVariableOnLeft > 1:
@@ -59,6 +59,7 @@ joinFactorsByVariable = joinFactorsByVariableWithCallTracking()
 ########### QUESTION 2  ###########
 ########### ########### ###########
 
+# 类型注解！！！
 def joinFactors(factors: List[Factor]):
     """
     Input factors is a list of factors.  
@@ -100,10 +101,25 @@ def joinFactors(factors: List[Factor]):
                     "Input factors: \n" +
                     "\n".join(map(str, factors)))
 
+    # find unconditional and conditional variables
+    var_domain = {}
+    # same domain
+    var_domain = list(factors)[0].variableDomainsDict()
+    uncon_var = set()
+    con_var = set()
+    for factor in factors:
+        uncon_var.update(factor.unconditionedVariables())
+        con_var.update(factor.conditionedVariables())
+    con_var -= uncon_var
+    newFactor = Factor(uncon_var, con_var, var_domain)
+    combination = newFactor.getAllPossibleAssignmentDicts()
+    for item in combination:
+        probability = 1
+        for factor in factors:
+            probability *= factor.getProbability(item)
+        newFactor.setProbability(item, probability)
+    return newFactor
 
-    "*** YOUR CODE HERE ***"
-    raiseNotDefined()
-    "*** END YOUR CODE HERE ***"
 
 ########### ########### ###########
 ########### QUESTION 3  ###########
@@ -129,8 +145,8 @@ def eliminateWithCallTracking(callTrackingList=None):
         Factor.getAllPossibleAssignmentDicts
         Factor.getProbability
         Factor.setProbability
-        Factor.unconditionedVariables
-        Factor.conditionedVariables
+        Factor.unconditionedVariables -- set
+        Factor.conditionedVariables -- set
         Factor.variableDomainsDict
         """
         # autograder tracking -- don't remove
@@ -151,11 +167,20 @@ def eliminateWithCallTracking(callTrackingList=None):
                     + "can't eliminate \nthat variable.\n" + \
                     "eliminationVariable:" + str(eliminationVariable) + "\n" +\
                     "unconditionedVariables: " + str(factor.unconditionedVariables()))
-
-        "*** YOUR CODE HERE ***"
-        raiseNotDefined()
-        "*** END YOUR CODE HERE ***"
-
+        var_domain = factor.variableDomainsDict()
+        # no impact on conditional variables
+        # don't care if there are some unrelated variables when setting or getting probability
+        u = factor.unconditionedVariables()
+        u.remove(eliminationVariable)
+        newFactor = Factor(u, factor.conditionedVariables(), var_domain)
+        combination = newFactor.getAllPossibleAssignmentDicts()
+        for item in combination:
+            sum = 0
+            for status in var_domain[eliminationVariable]:
+                item[eliminationVariable] = status
+                sum += factor.getProbability(item)
+            newFactor.setProbability(item, sum)
+        return newFactor
     return eliminate
 
 eliminate = eliminateWithCallTracking()

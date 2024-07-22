@@ -235,6 +235,8 @@ def check_dependencies():
     line, = ax.plot([], [], color="black")
     plt.show(block=False)
 
+    x = torch.zeros(5, 3)
+    print(x)
     for t in range(400):
         angle = t * 0.05
         x = torch.sin(torch.tensor(angle))

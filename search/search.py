@@ -72,6 +72,14 @@ def tinyMazeSearch(problem):
     w = Directions.WEST
     return  [s, s, w, s, w, w, s, w]
 
+
+class Path:
+    # state -- [x, y]
+    def __init__(self, state, action, cost):
+        self.state = state
+        self.action = action
+        self.cost = cost
+
 def depthFirstSearch(problem: SearchProblem):
     """
     Search the deepest nodes in the search tree first.
@@ -86,17 +94,80 @@ def depthFirstSearch(problem: SearchProblem):
     print("Is the start a goal?", problem.isGoalState(problem.getStartState()))
     print("Start's successors:", problem.getSuccessors(problem.getStartState()))
     """
-    "*** YOUR CODE HERE ***"
+    iniPath = Path([problem.getStartState()], [], 0)
+    if problem.isGoalState(problem.getStartState()):
+        return iniPath.action
+    myStack = util.Stack()
+    myStack.push(iniPath)
+    while not myStack.isEmpty():
+        curPath = myStack.pop()
+        if problem.isGoalState(curPath.state[-1]):
+            return curPath.action
+        else:
+            allSuccessors = problem.getSuccessors(curPath.state[-1])
+            for successor in allSuccessors:
+                if successor[0] not in curPath.state:
+                    newState = curPath.state[:] # 注意如果直接复制是引用传递!!!
+                    newState.append(successor[0])
+                    newAction = curPath.action[:]
+                    newAction.append(successor[1])
+                    newCost = successor[2] + curPath.cost
+                    newPath = Path(newState, newAction, newCost)
+                    myStack.push(newPath)
     util.raiseNotDefined()
 
 def breadthFirstSearch(problem: SearchProblem):
     """Search the shallowest nodes in the search tree first."""
-    "*** YOUR CODE HERE ***"
+    iniPath = Path([problem.getStartState()], [], 0)
+    if problem.isGoalState(problem.getStartState()):
+        return iniPath.action
+    myQueue = util.Queue()
+    myQueue.push(iniPath)
+    flag = [problem.getStartState()]
+    while not myQueue.isEmpty():
+        curPath = myQueue.pop()
+        if problem.isGoalState(curPath.state[-1]):
+            return curPath.action
+        else:
+            allSuccessors = problem.getSuccessors(curPath.state[-1])
+            for successor in allSuccessors:
+                if (successor[0] not in curPath.state) and (successor[0] not in flag):
+                    if not problem.isGoalState(successor[0]):
+                        flag.append(successor[0])
+                    newState = curPath.state[:]
+                    newState.append(successor[0])
+                    newAction = curPath.action[:]
+                    newAction.append(successor[1])
+                    newCost = successor[2] + curPath.cost
+                    newPath = Path(newState, newAction, newCost)
+                    myQueue.push(newPath)
     util.raiseNotDefined()
 
 def uniformCostSearch(problem: SearchProblem):
     """Search the node of least total cost first."""
-    "*** YOUR CODE HERE ***"
+    iniPath = Path([problem.getStartState()], [], 0)
+    if problem.isGoalState(problem.getStartState()):
+        return iniPath.action
+    myQueue = util.PriorityQueue()
+    myQueue.push(iniPath, 0)
+    flag = [problem.getStartState()]
+    while not myQueue.isEmpty():
+        curPath = myQueue.pop()
+        if problem.isGoalState(curPath.state[-1]):
+            return curPath.action
+        else:
+            allSuccessors = problem.getSuccessors(curPath.state[-1])
+            for successor in allSuccessors:
+                if (successor[0] not in curPath.state) and (successor[0] not in flag):
+                    if not problem.isGoalState(successor[0]):
+                        flag.append(successor[0])
+                    newState = curPath.state[:]
+                    newState.append(successor[0])
+                    newAction = curPath.action[:]
+                    newAction.append(successor[1])
+                    newCost = successor[2] + curPath.cost
+                    newPath = Path(newState, newAction, newCost)
+                    myQueue.push(newPath, newCost)
     util.raiseNotDefined()
 
 def nullHeuristic(state, problem=None):
@@ -108,7 +179,30 @@ def nullHeuristic(state, problem=None):
 
 def aStarSearch(problem: SearchProblem, heuristic=nullHeuristic):
     """Search the node that has the lowest combined cost and heuristic first."""
-    "*** YOUR CODE HERE ***"
+    iniPath = Path([problem.getStartState()], [], 0)
+    if problem.isGoalState(problem.getStartState()):
+        return iniPath.action
+    myQueue = util.PriorityQueue()
+    myQueue.push(iniPath, 0)
+    flag = [problem.getStartState()]
+    while not myQueue.isEmpty():
+        curPath = myQueue.pop()
+        if problem.isGoalState(curPath.state[-1]):
+            return curPath.action
+        else:
+            allSuccessors = problem.getSuccessors(curPath.state[-1])
+            for successor in allSuccessors:
+                if (successor[0] not in curPath.state) and (successor[0] not in flag):
+                    if not problem.isGoalState(successor[0]):
+                        flag.append(successor[0])
+                    newState = curPath.state[:]
+                    newState.append(successor[0])
+                    newAction = curPath.action[:]
+                    newAction.append(successor[1])
+                    newCost = successor[2] + curPath.cost
+                    m_distance = heuristic(successor[0], problem)
+                    newPath = Path(newState, newAction, newCost)
+                    myQueue.push(newPath, newCost + m_distance)
     util.raiseNotDefined()
 
 
