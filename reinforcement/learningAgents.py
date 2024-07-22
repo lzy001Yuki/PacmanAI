@@ -249,6 +249,14 @@ class ReinforcementAgent(ValueEstimationAgent):
                 print('\tAverage Rewards over testing: %.2f' % testAvg)
             print('\tAverage Rewards for last %d episodes: %.2f'  % (
                     NUM_EPS_UPDATE,windowAvg))
+            if windowAvg > -220:
+                if not hasattr(self, 'best_window_avg_score'):
+                    self.best_window_avg_score = -300
+                if windowAvg > self.best_window_avg_score:
+                    print("find an excellent policy, ready to save model")
+                    print("the highest score is", windowAvg)
+                    self.save_model("para.best.bin")
+                    self.best_window_avg_score = windowAvg
             print('\tEpisode took %.2f seconds' % (time.time() - self.episodeStartTime))
             self.lastWindowAccumRewards = 0.0
             self.episodeStartTime = time.time()

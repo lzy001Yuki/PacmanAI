@@ -65,7 +65,7 @@ class PacmanDeepQAgent(PacmanQAgent):
             self.model.optimizer.load_state_dict(checkpoint['model_optimizer_state_dict'])
             self.target_model.optimizer.load_state_dict(checkpoint['target_model_optimizer_state_dict'])
             self.replay_memory = checkpoint['memory']
-            print(self.model.state_dict())
+            #print(self.model.state_dict())
 
     def save_model(self, filename="para.bin"):
         torch.save({'model_state_dict': self.model.state_dict(),
@@ -73,7 +73,7 @@ class PacmanDeepQAgent(PacmanQAgent):
                     'model_optimizer_state_dict': self.model.optimizer.state_dict(),
                     'target_model_optimizer_state_dict': self.target_model.optimizer.state_dict(),
                     'memory': self.replay_memory},filename)
-        print(self.model.state_dict())
+        #print(self.model.state_dict())
 
     def getQValue(self, state, action):
         """
